@@ -141,3 +141,16 @@ lazy val bootstrapHealthPlay27 = Project("bootstrap-health-play-27", file("boots
     libraryDependencies ++= LibDependencies.healthPlay27,
     copySources(bootstrapHealthPlay26)
   )
+
+lazy val javaAgent = Project("java-agent", file("java-agent"))
+  .enablePlugins(SbtAutoBuildPlugin, SbtArtifactory)
+  .settings(
+    Compile / packageBin / packageOptions += Package.ManifestAttributes("Agent-Class" -> "uk.gov.hmrc.agent.Main"),
+    Compile / packageBin / packageOptions += Package.ManifestAttributes("Premain-Class" -> "uk.gov.hmrc.agent.Main"),
+    Compile / packageBin / packageOptions += Package.ManifestAttributes("Can-Retransform-Classes" -> "true"),
+    Compile / packageBin / packageOptions += Package.ManifestAttributes("Can-Redefine-Classes" -> "true"),
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "net.bytebuddy" % "byte-buddy" % "1.10.16"
+    )
+  ).dependsOn(bootstrapCommonPlay27 % Provided)
