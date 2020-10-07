@@ -147,10 +147,8 @@ lazy val javaAgent = Project("java-agent", file("java-agent"))
   .settings(
     Compile / packageBin / packageOptions += Package.ManifestAttributes("Agent-Class" -> "uk.gov.hmrc.agent.Main"),
     Compile / packageBin / packageOptions += Package.ManifestAttributes("Premain-Class" -> "uk.gov.hmrc.agent.Main"),
-    Compile / packageBin / packageOptions += Package.ManifestAttributes("Can-Retransform-Classes" -> "true"),
-    Compile / packageBin / packageOptions += Package.ManifestAttributes("Can-Redefine-Classes" -> "true"),
     commonSettings,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy" % "1.10.16"
+      "com.typesafe" % "config" % "1.4.0"
     )
-  ).dependsOn(bootstrapCommonPlay27 % Provided)
+  )

@@ -17,62 +17,25 @@
 package uk.gov.hmrc.agent
 
 import java.lang.instrument.Instrumentation
-import java.util.concurrent.Callable
 
-import net.bytebuddy.agent.builder.AgentBuilder
-import net.bytebuddy.agent.builder.AgentBuilder._
-import net.bytebuddy.description.`type`.TypeDescription
-import net.bytebuddy.description.method.MethodDescription
-import net.bytebuddy.dynamic.DynamicType
-import net.bytebuddy.implementation.MethodDelegation
-import net.bytebuddy.implementation.bind.annotation.SuperCall
-import net.bytebuddy.matcher.ElementMatchers._
-import net.bytebuddy.utility.JavaModule
-import play.api.ApplicationLoader.Context
-import play.api.inject.guice.GuiceApplicationBuilder
+import com.typesafe.config.ConfigFactory
 
-object ApplicationLoaderInterceptor {
+import scala.collection.JavaConverters._
+
+object Main {
 
   private val base64ConfigAllowSet = Set("conf1")
 
-  def intercept(
-    context: Context,
-    @SuperCall originalCall: Callable[GuiceApplicationBuilder]
-  ): GuiceApplicationBuilder = {
-
-    val notAllowedBase64Config = context.initialConfiguration.keys.collect {
-      case k if k.endsWith(".base64") => k.stripSuffix(".base64")
+  def premain(arguments: String, instrumentation: Instrumentation): Unit = {
+    val notAllowedBase64Config = ConfigFactory.load().entrySet().asScala.collect {
+      case e if e.getKey.endsWith(".base64") => e.getKey.stripSuffix(".base64")
     } -- base64ConfigAllowSet
 
-    if (notAllowedBase64Config.isEmpty) originalCall.call()
-    else
+    if (notAllowedBase64Config.nonEmpty) {
       throw new IllegalStateException(
         s"Following configuration keys are not allowed to be suffixed with .base64 - [${notAllowedBase64Config
           .mkString(",")}]"
       )
-  }
-}
-
-object Main {
-
-  def premain(arguments: String, instrumentation: Instrumentation): Unit = {
-    new AgentBuilder.Default()
-      .`type`(
-        named[TypeDescription]("uk.gov.hmrc.play.bootstrap.ApplicationLoader")
-      )
-      .transform(new Transformer {
-        override def transform(builder: DynamicType.Builder[_],
-                               typeDescription: TypeDescription,
-                               classLoader: ClassLoader,
-                               module: JavaModule): DynamicType.Builder[_] =
-          builder
-            .method(
-              named("builder")
-                .and(takesArgument[MethodDescription](0, classOf[Context]))
-                .and(returns(classOf[GuiceApplicationBuilder]))
-            )
-            .intercept(MethodDelegation.to(ApplicationLoaderInterceptor))
-      })
-      .installOn(instrumentation)
+    }
   }
 }
