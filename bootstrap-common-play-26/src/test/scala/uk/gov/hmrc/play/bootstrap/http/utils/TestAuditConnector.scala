@@ -16,19 +16,33 @@
 
 package uk.gov.hmrc.play.bootstrap.http.utils
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
-import play.api.inject.{ApplicationLifecycle, DefaultApplicationLifecycle}
+import akka.actor.{ActorSystem, CoordinatedShutdown}
+import play.api.libs.json.{JsObject, Writes}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.config.AuditingConfig
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.{AuditChannel, AuditConnector, AuditCountScheduler, AuditCounter, AuditResult}
+import uk.gov.hmrc.play.audit.model.{DataEvent, ExtendedDataEvent, MergedDataEvent}
 
-class TestAuditConnector(appName: String) extends AuditConnector {
-  override val auditingConfig: AuditingConfig = AuditingConfig(
-    consumer         = None,
-    enabled          = false,
-    auditSource      = appName,
-    auditSentHeaders = false
-  )
-  override def materializer: Materializer = ActorMaterializer()(ActorSystem())
-  override def lifecycle: ApplicationLifecycle = new DefaultApplicationLifecycle()
+import scala.concurrent.{ExecutionContext, Future}
+
+object TestAuditCountScheduler extends AuditCountScheduler {
+  override def actorSystem: ActorSystem = ???
+  override def coordinatedShutdown: CoordinatedShutdown = ???
+  override implicit def ec: ExecutionContext = ???
+  override def watch(auditCounter: AuditCounter): Unit = ()
+}
+
+class TestAuditConnector extends AuditConnector(null, null, null, TestAuditCountScheduler) {
+  override def sendEvent(event: DataEvent)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AuditResult] = Future.successful(AuditResult.Success)
+
+  override def sendExplicitAudit(auditType: String, detail: JsObject)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = ()
+
+  override def sendExplicitAudit(auditType: String, detail: Map[String, String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = ()
+
+  override def sendExplicitAudit[T](auditType: String, detail: T)(implicit hc: HeaderCarrier, ec: ExecutionContext, writes: Writes[T]): Unit = ()
+
+  override def sendExtendedEvent(event: ExtendedDataEvent)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AuditResult] = Future.successful(AuditResult.Success)
+
+  override def sendMergedEvent(event: MergedDataEvent)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AuditResult] = Future.successful(AuditResult.Success)
+
 }

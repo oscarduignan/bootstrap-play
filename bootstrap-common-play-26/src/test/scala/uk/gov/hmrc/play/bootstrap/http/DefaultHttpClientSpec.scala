@@ -17,10 +17,10 @@
 package uk.gov.hmrc.play.bootstrap.http
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.TestData
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.Application
 import play.api.inject.bind
@@ -42,18 +42,21 @@ class DefaultHttpClientSpec
 
   private val appName = "myApp"
 
-  import ExecutionContext.Implicits.global
   import HttpReads.Implicits._
 
-  override def newAppForTest(testData: TestData): Application =
+  import ExecutionContext.Implicits.global
+
+  override def newAppForTest(testData: TestData): Application = {
+
     new GuiceApplicationBuilder()
       .overrides(
         bind[String].qualifiedWith("appName").toInstance(appName),
         bind[HttpAuditing].to[DefaultHttpAuditing],
         bind[uk.gov.hmrc.http.HttpClient].to[DefaultHttpClient],
-        bind[AuditConnector].toInstance(new TestAuditConnector(appName))
+        bind[AuditConnector].toInstance(new TestAuditConnector)
       )
       .build()
+  }
 
   def myHttpClient = app.injector.instanceOf[uk.gov.hmrc.http.HttpClient]
 
