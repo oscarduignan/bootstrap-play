@@ -16,16 +16,22 @@
 
 package uk.gov.hmrc.play.bootstrap.audit
 
-import akka.stream.Materializer
+import com.codahale.metrics.Gauge
+import com.codahale.metrics.MetricRegistry.MetricSupplier
+import com.kenshoo.play.metrics.Metrics
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.play.audit.http.config.AuditingConfig
-import uk.gov.hmrc.play.audit.http.connector.{AuditChannel, AuditConnector, AuditCounter}
-import play.api.inject.ApplicationLifecycle
+import uk.gov.hmrc.play.audit.http.connector.AuditCounterMetrics
 
 @Singleton
-class DefaultAuditConnector @Inject()(
-  override val auditingConfig: AuditingConfig,
-  override val auditChannel: AuditChannel,
-  override val auditCounter: AuditCounter
-) extends AuditConnector
+class DefaultAuditCounterMetrics @Inject()(
+    metrics: Metrics
+) extends AuditCounterMetrics {
+  def registerMetric(name:String, read:()=>Long):Unit = {
+    metrics.defaultRegistry.gauge(name, new MetricSupplier[Gauge[_]] {
+      override def newMetric(): Gauge[_] = new Gauge[Long] {
+        override def getValue: Long = read()
+      }
+    })
+  }
+}

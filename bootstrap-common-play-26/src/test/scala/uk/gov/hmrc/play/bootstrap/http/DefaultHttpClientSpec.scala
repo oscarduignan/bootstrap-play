@@ -17,6 +17,7 @@
 package uk.gov.hmrc.play.bootstrap.http
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import org.mockito.MockitoSugar.mock
 import org.scalatest.TestData
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +28,8 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.config.AuditingConfig
+import uk.gov.hmrc.play.audit.http.connector.{AuditChannel, AuditConnector, AuditCounter}
 import uk.gov.hmrc.play.bootstrap.http.utils._
 
 import scala.concurrent.ExecutionContext
@@ -53,7 +55,11 @@ class DefaultHttpClientSpec
         bind[String].qualifiedWith("appName").toInstance(appName),
         bind[HttpAuditing].to[DefaultHttpAuditing],
         bind[uk.gov.hmrc.http.HttpClient].to[DefaultHttpClient],
-        bind[AuditConnector].toInstance(new TestAuditConnector)
+        bind[AuditConnector].toInstance(new AuditConnector {
+          def auditingConfig = AuditingConfig(None, false, appName, false)
+          def auditChannel = mock[AuditChannel]
+          def auditCounter = mock[AuditCounter]
+        })
       )
       .build()
   }

@@ -17,15 +17,15 @@
 package uk.gov.hmrc.play.bootstrap.audit
 
 import akka.stream.Materializer
+import play.api.inject.ApplicationLifecycle
+import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.play.audit.http.config.AuditingConfig
-import uk.gov.hmrc.play.audit.http.connector.{AuditChannel, AuditConnector, AuditCounter}
-import play.api.inject.ApplicationLifecycle
+import uk.gov.hmrc.play.audit.http.connector.AuditChannel
 
 @Singleton
-class DefaultAuditConnector @Inject()(
-  override val auditingConfig: AuditingConfig,
-  override val auditChannel: AuditChannel,
-  override val auditCounter: AuditCounter
-) extends AuditConnector
+class DefaultAuditChannel @Inject()(
+  val auditingConfig: AuditingConfig,
+  val materializer: Materializer,
+  val lifecycle     : ApplicationLifecycle
+) extends AuditChannel
